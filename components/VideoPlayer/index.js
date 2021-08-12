@@ -2,10 +2,10 @@ import { __rest } from "tslib";
 import { Audio, Video } from 'expo-av';
 import { Animated, Dimensions, Text, TouchableOpacity, TouchableWithoutFeedback, View, } from 'react-native';
 import { FullscreenEnterIcon, FullscreenExitIcon, PauseIcon, PlayIcon, ReplayIcon, Spinner, MuteIcon, UnmuteIcon } from './assets/icons';
-import NetInfo from '@react-native-community/netinfo';
+//import NetInfo from '@react-native-community/netinfo';
 import { withDefaultProps } from 'with-default-props';
 import React, { useEffect, useState, useRef } from 'react';
-import Slider from '@react-native-community/slider';
+//import Slider from '@react-native-community/slider';
 const SLIDER_COLOR = '#009485';
 const BUFFERING_SHOW_DELAY = 200;
 // UI states
@@ -87,9 +87,9 @@ const VideoPlayer = (props) => {
     let shouldPlayAtEndOfSeek = false;
     let controlsTimer = null;
     const [isConnected, setIsConnected] = useState<Boolean>(true);
-	NetInfo.fetch().then(state => {
+	/*NetInfo.fetch().then(state => {
 		setIsConnected(state.isConnected);
-	});
+	});*/
     const [playbackState, setPlaybackState] = useState(PlaybackStates.Loading);
     const [lastPlaybackStateUpdate, setLastPlaybackStateUpdate] = useState(Date.now());
     const [seekState, setSeekState] = useState(SeekStates.NotSeeking);
@@ -497,10 +497,7 @@ const VideoPlayer = (props) => {
 
           {/* Seek bar */}
           {!disableSlider && (<TouchableWithoutFeedback onLayout={onSliderLayout} onPress={onSeekBarTap}>
-              <Slider style={{ marginRight: 10, marginLeft: 10, flex: 1 }} thumbTintColor={sliderColor} minimumTrackTintColor={sliderColor} trackImage={iosTrackImage} thumbImage={thumbImage} value={getSeekSliderPosition()} onValueChange={onSeekSliderValueChange} onSlidingComplete={onSeekSliderSlidingComplete} disabled={playbackState === PlaybackStates.Loading ||
-                playbackState === PlaybackStates.Ended ||
-                playbackState === PlaybackStates.Error ||
-                controlsState !== ControlStates.Shown}/>
+             
             </TouchableWithoutFeedback>)}
           {/* Duration display */}
           <Text style={[textStyle, { backgroundColor: 'transparent', marginRight: 5 }]}>
