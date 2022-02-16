@@ -13,6 +13,7 @@ import {
 } from 'recoil';
 import {photosState, dataProviderState, storiesState, preparedMediaState, mediasState} from '../states';
 import {default as Reanimated,} from 'react-native-reanimated';
+import ColumnProvider from './animation/ColumnsNumber';
 interface Props {
   scrollY2: Reanimated.SharedValue<number>;
   scrollY3: Reanimated.SharedValue<number>;
@@ -166,9 +167,8 @@ const PhotosContainer: React.FC<Props> = (props) => {
         zIndex:10,
       }}
     >
+      <ColumnProvider>
           <PinchZoom
-            scale={props.scale}
-            numColumnsAnimated={props.numColumnsAnimated}
             focalX={focalX}
             focalY={focalY}
             numberOfPointers={numberOfPointers}
@@ -194,6 +194,7 @@ const PhotosContainer: React.FC<Props> = (props) => {
               SCREEN_WIDTH={SCREEN_WIDTH}
             />
           </PinchZoom>
+      </ColumnProvider>
     </View>
   ) : (
     <></>
