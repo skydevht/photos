@@ -18,12 +18,7 @@ import {storyState} from '../states';
 
 interface Props {
   story:story;
-  duration: number;
-  numColumns: 2|3|4;
-  text?: string | undefined;
   height: number;
-  showStory:Animated.Value;
-  headerShown:Reanimated.SharedValue<number>;
 }
 
 const Highlights: React.FC<Props> = (props) => {
@@ -42,8 +37,8 @@ const Highlights: React.FC<Props> = (props) => {
   const openHighlight = () => {
     setStory(props.story);
     console.log('opening highlight');
-    props.showStory.setValue(1);
-    props.headerShown.value = 0;
+    // props.showStory.setValue(1);
+    // props.headerShown.value = 0;
     ////console.log('here');
   }
 

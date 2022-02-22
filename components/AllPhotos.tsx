@@ -41,6 +41,16 @@ interface Props {
   SCREEN_WIDTH: number;
 }
 
+function useIsMounted() {
+  const isMounted = useRef(false);
+  useEffect(() => {
+    isMounted.current = true;
+    console.log(['component AllPhotos mounted']);
+    return () => {isMounted.current = false;console.log(['component AllPhotos unmounted']);}
+  }, []);
+  return isMounted;
+}
+
 const AllPhotos: React.FC<Props> = (props) => {
 	const navigation = useNavigation();
   const selectedAssets:Reanimated.SharedValue<string[]> = useSharedValue([]);
@@ -75,12 +85,7 @@ const AllPhotos: React.FC<Props> = (props) => {
     console.log([Date.now()+': component AllPhotos rendered']);
   });
 
-  const isMounted = useRef(false);
-  useEffect(() => {
-    isMounted.current = true;
-    console.log(['component AllPhotos mounted']);
-    return () => {isMounted.current = false;console.log(['component AllPhotos unmounted']);}
-  }, []);
+  const isMounted = useIsMounted();
  
   const showStory = useRef(new Animated.Value(0)).current;
   const scrollIndex2 = useRef(new Animated.Value(0)).current;
@@ -355,80 +360,6 @@ const AllPhotos: React.FC<Props> = (props) => {
         dragY={dragY}
         SCREEN_HEIGHT={props.SCREEN_HEIGHT}
         SCREEN_WIDTH={props.SCREEN_WIDTH}
-      />
-      <RenderPhotos
-        photos={preparedMedia}
-        loading={props.loading}
-        maxWidth={props.SCREEN_WIDTH*2}
-        minWidth={props.SCREEN_WIDTH/2}
-        numColumns={3}
-        sortCondition="day"
-        numColumnsAnimated={props.numColumnsAnimated}
-        scale={props.scale}
-        scrollIndex2={scrollIndex2}
-        scrollIndex3={scrollIndex3}
-        scrollIndex4={scrollIndex4}
-        focalY={props.focalY}
-        numberOfPointers={props.numberOfPointers}
-        modalShown={modalShown}
-        headerShown={props.headerShown}
-        storiesHeight={props.storiesHeight}
-        showStory={showStory}
-        scrollY={props.scrollY3}
-        HEADER_HEIGHT={props.HEADER_HEIGHT}
-        FOOTER_HEIGHT={props.FOOTER_HEIGHT}
-        animatedImagePositionX={animatedImagePositionX}
-        animatedImagePositionY={animatedImagePositionY}
-        animatedSingleMediaIndex={animatedSingleMediaIndex}
-        singleImageWidth={singleImageWidth}
-        singleImageHeight={singleImageHeight}
-        selectedAssets={selectedAssets}
-        lastSelectedAssetId={lastSelectedAssetId}
-        lastSelectedAssetAction={lastSelectedAssetAction}
-        dragY={dragY}
-        SCREEN_HEIGHT={props.SCREEN_HEIGHT}
-        SCREEN_WIDTH={props.SCREEN_WIDTH}
-
-				uploadedAssets={uploadedAssets}
-				lastUpload={lastUpload}
-				uploadingPercent={uploadingPercent}
-      />
-      <RenderPhotos
-        photos={preparedMedia}
-        loading={props.loading}
-        maxWidth={props.SCREEN_WIDTH*2}
-        minWidth={props.SCREEN_WIDTH/2}
-        numColumns={4}
-        sortCondition="month"
-        numColumnsAnimated={props.numColumnsAnimated}
-        scale={props.scale}
-        scrollIndex2={scrollIndex2}
-        scrollIndex3={scrollIndex3}
-        scrollIndex4={scrollIndex4}
-        focalY={props.focalY}
-        numberOfPointers={props.numberOfPointers}
-        modalShown={modalShown}
-        headerShown={props.headerShown}
-        storiesHeight={props.storiesHeight}
-        showStory={showStory}
-        scrollY={props.scrollY4}
-        HEADER_HEIGHT={props.HEADER_HEIGHT}
-        FOOTER_HEIGHT={props.FOOTER_HEIGHT}
-        animatedImagePositionX={animatedImagePositionX}
-        animatedImagePositionY={animatedImagePositionY}
-        animatedSingleMediaIndex={animatedSingleMediaIndex}
-        singleImageWidth={singleImageWidth}
-        singleImageHeight={singleImageHeight}
-        selectedAssets={selectedAssets}
-        lastSelectedAssetId={lastSelectedAssetId}
-        lastSelectedAssetAction={lastSelectedAssetAction}
-        dragY={dragY}
-        SCREEN_HEIGHT={props.SCREEN_HEIGHT}
-        SCREEN_WIDTH={props.SCREEN_WIDTH}
-
-				uploadedAssets={uploadedAssets}
-				lastUpload={lastUpload}
-				uploadingPercent={uploadingPercent}
       />
       <SingleMedia 
         modalShown={modalShown}
