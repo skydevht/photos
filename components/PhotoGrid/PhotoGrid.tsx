@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Dimensions, View, Text } from 'react-native';
-import { default as Reanimated } from 'react-native-reanimated';
+import { default as Reanimated, Extrapolate, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useRecoilState } from 'recoil';
-import { BaseScrollView, LayoutProvider, RecyclerListView } from 'recyclerlistview';
+import { BaseScrollView, Layout, LayoutProvider, RecyclerListView } from 'recyclerlistview';
 import { dataProviderState } from '../../states'
 import { layout } from '../../types/interfaces';
 import { useColumnsNumber, useScale } from './GridContext';
@@ -74,6 +74,16 @@ const PhotoGrid: React.FC<Props> = (props) => {
         }
 
     }
+    const renderItemContainer = (props: any, parentProps: any, children: React.ReactNode) => {
+        return (
+            <Cell {...props} scale={scale} layoutProvider={parentProps.extendedState.layoutProvider} index={parentProps.index}>
+                {children}
+            </Cell>
+        );
+    }
+    const extendedState = useMemo(() => ({
+        layoutProvider
+    }), [layoutProvider])
     return dataProvider.getSize() ? (
         <RecyclerListView
             style={{
@@ -82,8 +92,68 @@ const PhotoGrid: React.FC<Props> = (props) => {
             layoutProvider={layoutProvider}
             dataProvider={dataProvider}
             rowRenderer={rowRenderer}
+            renderItemContainer={renderItemContainer}
+            extendedState={extendedState}
         />
     ) : null
+}
+
+interface CellProps {
+    layoutProvider: GridLayoutProvider
+    style: object,
+    index: number,
+    scale: Reanimated.SharedValue<number>
+}
+
+const Cell: React.FC<CellProps> = ({ layoutProvider, index, scale, style, ...props }) => {
+    let layouts = layoutProvider.getLayoutManager()?.getLayoutsForIndex(index);
+    const animationStyle = useAnimatedStyle(() => {
+        if (layouts) {
+            const currentLayout = layouts[1] as Layout;
+            const finalLayouts = layouts.map((el, idx) => ({
+                layout: el,
+                from: idx - 1,
+            })).filter(el => !!el.layout) as Array<{ layout: Layout, from: number }>;
+            if (finalLayouts.length === 1) return {};
+            const fromValues = finalLayouts.map(el => el.from);
+
+            const extrapolation = {
+                extrapolateLeft: Extrapolate.CLAMP,
+                extrapolateRight: Extrapolate.CLAMP,
+            };
+            const finalScale = interpolate(scale.value, fromValues, finalLayouts.map(el => {
+                        if (el.layout.width && currentLayout.width) {
+                            return el.layout.width / currentLayout.width; 
+                        }
+                        return 1;
+                    }));
+            const translateOrigin = (center: number, d: number) => {
+                // Scale transform is centered, so we adjust the translation to make it appears as it happens from the top-left corner
+                return center - d/2;
+            }
+
+            return {
+                transform: [{
+                    translateX: interpolate(scale.value, fromValues, finalLayouts.map(el => translateOrigin(el.layout.x - currentLayout.x, currentLayout.width - el.layout.width))),
+                }, {
+                    translateY: interpolate(scale.value, fromValues, finalLayouts.map(el => translateOrigin(el.layout.y - currentLayout.y, currentLayout.width - el.layout.width)))
+                }, {
+                    scale: interpolate(scale.value, fromValues, finalLayouts.map(el => {
+                        if (el.layout.width && currentLayout.width) {
+                            return el.layout.width / currentLayout.width; 
+                        }
+                        return 1;
+                    }))
+                }]
+            }
+        }
+        return {}
+    })
+    return (
+        <Reanimated.View style={[style, animationStyle]} {...props}>
+            {props.children}
+        </Reanimated.View >
+    );
 }
 
 export default PhotoGrid

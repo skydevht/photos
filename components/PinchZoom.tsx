@@ -39,12 +39,13 @@ const PinchZoom: React.FC<Props> = (props) => {
 
     const _onPinchGestureEvent = useAnimatedGestureHandler<PinchGestureHandlerGestureEvent, {}>({
         onStart: (_, ctx) => {
-
             console.log("Start pinching")
         },
         onActive: (event, ctx) => {
-            scale.value = event.scale - 1; // linear scale, not geometric, we revert to 0 as the origin
-            console.log("Scale is " + scale.value)
+            let result = event.scale - 1; // linear scale, not geometric, we revert to 0 as the origin
+            // if (result < -1) result = -1;
+            // else if (result > 1) result = 1;
+            scale.value = result;
         },
         onEnd: (event) => {
             scale.value = withTiming(
@@ -61,7 +62,7 @@ const PinchZoom: React.FC<Props> = (props) => {
                     if (result > 4) result = 4;
                     runOnJS(updateColumn)(result)
                     // we reset the scale as we have modified the columns
-                    scale.value = 1;
+                    scale.value = 0;
                     // let _pinchOrZoom: "pinch" | "zoom" | undefined;
                     // if (event.scale > 1) {
                     //   _pinchOrZoom = 'pinch';

@@ -30,7 +30,7 @@ interface Props { }
 const GridProvider: React.FC<Props> = (props) => {
   const [numColumns, setNumColumns] = useRecoilState(numColumnsState);
   const [columns, setColumns] = useState(numColumns);
-  const scale = useSharedValue(1);
+  const scale = useSharedValue(0);
   return (
     <GridContext.Provider value={{columns, setColumns, scale }}>
       {props.children}
