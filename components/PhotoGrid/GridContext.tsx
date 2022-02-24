@@ -17,7 +17,7 @@ const GridContext: React.Context<PossibleContext> = createContext({} as Possible
 
 export function useColumnsNumber() {
   const {columns, setColumns} = useContext(GridContext);
-  return [columns, setColumns];
+  return [columns, setColumns] as [number, Function];
 }
 
 export function useScale() {
@@ -29,8 +29,8 @@ interface Props { }
 
 const GridProvider: React.FC<Props> = (props) => {
   const [numColumns, setNumColumns] = useRecoilState(numColumnsState);
-  const [columns, setColumns] = useState(numColumns);
-  const scale = useSharedValue(0);
+  const [columns, setColumns] = useState(2);
+  const scale = useSharedValue(2);
   return (
     <GridContext.Provider value={{columns, setColumns, scale }}>
       {props.children}

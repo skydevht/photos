@@ -10,11 +10,8 @@ type gridLayout = 'upper' | 'current' | 'lower';
 // We are basically recreating WrapGridLayoutManager here
 export default class GridLayoutManager extends LayoutManager {
     // k is the number of columns
-    private _upperLayouts: Layout[]; // hold the layouts for k + 1 columns
-    private _lowerLayouts: Layout[]; // hold the layouts for k - 1 columns
-    private _currentLayouts: Layout[]; // hold the layouts for k - 1 columns
+    private _allLayouts: Layout[][]; // hold MAX_COLUMNS - MIN_COLUMNS + 1 sets of layouts
     private _columnNumber: number;
-    private _scale: Reanimated.SharedValue<number>;
     private _layoutProvider: GridLayoutProvider;
     private _window: Dimension;
     private _totalHeight: number;
@@ -32,12 +29,11 @@ export default class GridLayoutManager extends LayoutManager {
         this._window = renderWindowSize;
         this._totalHeight = 0;
         this._totalWidth = 0;
-        this._upperLayouts = []
-        this._lowerLayouts = []
-        this._scale = scale;
         this._columnNumber = columnsNumber;
-        this._currentLayouts = cachedLayouts ? cachedLayouts : [];
+        this._allLayouts = [[], [], []]
+        this._allLayouts[this._columnNumber - MIN_COLUMNS] = cachedLayouts ? cachedLayouts : [];
     }
+
     public getStyleOverridesForIndex(index: number): object | undefined {
         // This is where to put the transform
         return undefined
@@ -47,24 +43,30 @@ export default class GridLayoutManager extends LayoutManager {
         return { height: this._totalHeight, width: this._totalWidth };
     }
     public getLayouts(): Layout[] {
-        return this._currentLayouts;
+        return this._allLayouts[this._columnNumber - MIN_COLUMNS];
     }
 
-    public getLayoutsForIndex(index: number): Array<Layout | null> {
-        if (this._currentLayouts.length > index) {
-            const upperLayout = this._upperLayouts.length > index ? this._upperLayouts[index] : null
-            const lowerLayout = this._lowerLayouts.length > index ? this._lowerLayouts[index] : null
-            return [lowerLayout, this._currentLayouts[index], upperLayout];
+    public getLayoutsForIndex(index: number): Array<{ layout: Layout, colNum: number }> {
+        if (this._allLayouts.every((layout => index < layout.length))) {
+            return this._allLayouts.map((layouts, idx) => ({ layout: layouts[index], colNum: idx + MIN_COLUMNS }))
         } else {
-            throw new Error("No layout available for index: " + index);
+            throw new Error('Layouts unavalaible')
         }
     }
 
 
     public overrideLayout(index: number, dim: Dimension): boolean {
         // We may look into GridLayoutManager for a better algorithm
-        const layout = this._currentLayouts[index];
+        const layout = this.getLayouts()[index];
         if (layout) {
+            const heightDiff = Math.abs(dim.height - layout.height);
+            const widthDiff = Math.abs(dim.width - layout.width);
+            if (widthDiff < 3) {
+                if (heightDiff === 0) {
+                    return false;
+                }
+                dim.width = layout.width;
+            }
             layout.isOverridden = true;
             layout.width = dim.width;
             layout.height = dim.height;
@@ -78,11 +80,8 @@ export default class GridLayoutManager extends LayoutManager {
 
     public relayoutFromIndex(startIndex: number, itemCount: number): void {
         // we will calculate the other layouts as well
-        let layoutsToConsider = [{ layouts: this._currentLayouts, columnNumber: this._columnNumber }];
-        if (this._columnNumber - 1 >= MIN_COLUMNS) layoutsToConsider = [{ layouts: this._lowerLayouts, columnNumber: this._columnNumber - 1 }, ...layoutsToConsider];
-        if (this._columnNumber + 1 <= MAX_COLUMNS) layoutsToConsider = [...layoutsToConsider, { layouts: this._upperLayouts, columnNumber: this._columnNumber + 1 }];
         // [-1, 0, 1].filter(d => this._columnNumber + d >= MIN_COLUMNS || this._columnNumber + d <= MAX_COLUMNS)
-        layoutsToConsider.forEach(({ layouts, columnNumber }) => {
+        this._allLayouts.map((layouts, idx) => ({ layouts, columnNumber: idx + MIN_COLUMNS })).forEach(({ layouts, columnNumber }) => {
             let startX = 0;
             let startY = 0;
             let maxBound = 0;
@@ -152,7 +151,7 @@ export default class GridLayoutManager extends LayoutManager {
 
     }
 
-    private _locateFirstNeighbourIndex(startIndex: number, layouts = this._currentLayouts): number {
+    private _locateFirstNeighbourIndex(startIndex: number, layouts = this.getLayouts()): number {
         if (startIndex === 0) {
             return 0;
         }

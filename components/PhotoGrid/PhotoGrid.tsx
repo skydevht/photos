@@ -43,7 +43,7 @@ interface Props {
 const PhotoGrid: React.FC<Props> = (props) => {
     const SCREEN_WIDTH = Dimensions.get('window').width;
     const SCREEN_HEIGHT = Dimensions.get('window').height;
-    const [numColumns] = useColumnsNumber() as [number];
+    const [numColumns] = useColumnsNumber();
     const scale = useScale();
     const [dataProvider] = useRecoilState(dataProviderState);
     const data = dataProvider.getAllData();
@@ -74,13 +74,13 @@ const PhotoGrid: React.FC<Props> = (props) => {
         }
 
     }
-    const renderItemContainer = (props: any, parentProps: any, children: React.ReactNode) => {
+    const renderItemContainer = useCallback((props: any, parentProps: any, children: React.ReactNode) => {
         return (
-            <Cell {...props} scale={scale} layoutProvider={parentProps.extendedState.layoutProvider} index={parentProps.index}>
+            <Cell {...props} scale={scale} columnNumber={numColumns} layoutProvider={parentProps.extendedState.layoutProvider} index={parentProps.index}>
                 {children}
             </Cell>
         );
-    }
+    }, [numColumns])
     const extendedState = useMemo(() => ({
         layoutProvider
     }), [layoutProvider])
@@ -102,18 +102,19 @@ interface CellProps {
     layoutProvider: GridLayoutProvider
     style: object,
     index: number,
+    columnNumber: number,
     scale: Reanimated.SharedValue<number>
 }
 
-const Cell: React.FC<CellProps> = ({ layoutProvider, index, scale, style, ...props }) => {
+const Cell: React.FC<CellProps> = React.forwardRef(({ layoutProvider, columnNumber, index, scale, style, ...props }, ref) => {
     let layouts = layoutProvider.getLayoutManager()?.getLayoutsForIndex(index);
     const animationStyle = useAnimatedStyle(() => {
         if (layouts) {
-            const currentLayout = layouts[1] as Layout;
+            const currentLayout = layouts.find(o => o.colNum === columnNumber)?.layout as Layout;
             const finalLayouts = layouts.map((el, idx) => ({
-                layout: el,
-                from: idx - 1,
-            })).filter(el => !!el.layout) as Array<{ layout: Layout, from: number }>;
+                layout: el.layout,
+                from: el.colNum,
+            })) as Array<{ layout: Layout, from: number }>;
             if (finalLayouts.length === 1) return {};
             const fromValues = finalLayouts.map(el => el.from);
 
@@ -122,28 +123,31 @@ const Cell: React.FC<CellProps> = ({ layoutProvider, index, scale, style, ...pro
                 extrapolateRight: Extrapolate.CLAMP,
             };
             const finalScale = interpolate(scale.value, fromValues, finalLayouts.map(el => {
-                        if (el.layout.width && currentLayout.width) {
-                            return el.layout.width / currentLayout.width; 
-                        }
-                        return 1;
-                    }));
+                if (el.layout.width && currentLayout.width) {
+                    return el.layout.width / currentLayout.width;
+                }
+                return 1;
+            }));
             const translateOrigin = (center: number, d: number) => {
                 // Scale transform is centered, so we adjust the translation to make it appears as it happens from the top-left corner
-                return center - d/2;
+                return center - d / 2;
             }
 
             return {
                 transform: [{
-                    translateX: interpolate(scale.value, fromValues, finalLayouts.map(el => translateOrigin(el.layout.x - currentLayout.x, currentLayout.width - el.layout.width))),
+                    translateX: interpolate(
+                        scale.value,
+                        fromValues,
+                        finalLayouts.map(el => translateOrigin(el.layout.x - currentLayout.x, currentLayout.width - el.layout.width)),
+                    ),
                 }, {
-                    translateY: interpolate(scale.value, fromValues, finalLayouts.map(el => translateOrigin(el.layout.y - currentLayout.y, currentLayout.width - el.layout.width)))
+                    translateY: interpolate(
+                        scale.value,
+                        fromValues,
+                        finalLayouts.map(el => translateOrigin(el.layout.y - currentLayout.y, currentLayout.width - el.layout.width)),
+                    )
                 }, {
-                    scale: interpolate(scale.value, fromValues, finalLayouts.map(el => {
-                        if (el.layout.width && currentLayout.width) {
-                            return el.layout.width / currentLayout.width; 
-                        }
-                        return 1;
-                    }))
+                    scale: finalScale
                 }]
             }
         }
@@ -154,6 +158,6 @@ const Cell: React.FC<CellProps> = ({ layoutProvider, index, scale, style, ...pro
             {props.children}
         </Reanimated.View >
     );
-}
+})
 
 export default PhotoGrid

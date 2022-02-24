@@ -26,15 +26,17 @@ const PinchZoom: React.FC<Props> = (props) => {
     const SCREEN_HEIGHT = Dimensions.get('window').height;
     const sortCondition = useRef<sortCondition>('day');
     const scale = useScale();
-    const [numColumns, setColumns] = useColumnsNumber() as [number, Function];
+    const [numColumns, setColumns] = useColumnsNumber();
 
     useEffect(() => {
         console.log([Date.now() + ': component PinchZoom' + numColumns + ' rendered']);
     });
     let pinchRef = createRef<PinchGestureHandler>();
 
-    const updateColumn = (newValue) => {
-        setColumns(newValue)
+    const updateColumn = (newValue: number) => {
+        setTimeout(() => {
+            setColumns(newValue)
+        }, 500)
     }
 
     const _onPinchGestureEvent = useAnimatedGestureHandler<PinchGestureHandlerGestureEvent, {}>({
@@ -42,9 +44,9 @@ const PinchZoom: React.FC<Props> = (props) => {
             console.log("Start pinching")
         },
         onActive: (event, ctx) => {
-            let result = event.scale - 1; // linear scale, not geometric, we revert to 0 as the origin
-            // if (result < -1) result = -1;
-            // else if (result > 1) result = 1;
+            let result = numColumns + event.scale - 1; // linear scale, not geometric, we revert to 0 as the origin
+            if (result < 2) result = 2;
+            else if (result > 4) result = 4;
             scale.value = result;
         },
         onEnd: (event) => {
@@ -56,13 +58,8 @@ const PinchZoom: React.FC<Props> = (props) => {
                 },
                 () => {
                     // switching to the correct number of columns when the animation ends
-                    let result = numColumns + scale.value
-                    console.log("Resulting colum number is " + result);
-                    if (result < 2) result = 2;
-                    if (result > 4) result = 4;
-                    runOnJS(updateColumn)(result)
+                    runOnJS(updateColumn)(scale.value)
                     // we reset the scale as we have modified the columns
-                    scale.value = 0;
                     // let _pinchOrZoom: "pinch" | "zoom" | undefined;
                     // if (event.scale > 1) {
                     //   _pinchOrZoom = 'pinch';
@@ -82,7 +79,7 @@ const PinchZoom: React.FC<Props> = (props) => {
                 }
             );
         }
-    });
+    }, [numColumns]);
 
     return (
         <PinchGestureHandler
