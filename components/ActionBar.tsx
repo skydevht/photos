@@ -1,77 +1,84 @@
-import * as React from 'react';
+import React, { useEffect } from 'react';
 import { Appbar } from 'react-native-paper';
 import { StyleSheet } from 'react-native';
-import { default as Reanimated, useSharedValue, useDerivedValue, useAnimatedStyle } from 'react-native-reanimated';
+import { default as Reanimated, useSharedValue, useDerivedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { ReText } from 'react-native-redash';
 
 interface Props {
-  actionBarOpacity: Reanimated.SharedValue<number>;
-  actions: Array<{icon:string;color:string;onPress:Function;name: string;}>;
-  moreActions:Array<{icon:string;color:string;onPress:Function;name: string;}>;
+  visible: boolean;
+  actions: Array<{ icon: string; color: string; onPress: Function; name: string; }>;
+  moreActions: Array<{ icon: string; color: string; onPress: Function; name: string; }>;
   backAction: Function;
-  selectedAssets:Reanimated.SharedValue<string[]>;
-  lastSelectedAssetId: Reanimated.SharedValue<string>;
-  lastSelectedAssetAction: Reanimated.SharedValue<number>;
+  selectedAssets: string[];
+  lastSelectedAssetId: string;
+  lastSelectedAssetAction: number;
 }
 const ActionBar: React.FC<Props> = (props) => {
-  const animatedStyle = useAnimatedStyle(()=>{
+  const opacity = useSharedValue(0); // default is being non-visible
+  const animatedStyle = useAnimatedStyle(() => {
     return {
-        opacity: props.actionBarOpacity.value,
-        top: props.actionBarOpacity.value?0:-200
+      opacity: opacity.value,
+      top: opacity.value ? 0 : -200
     };
-  },[props.actionBarOpacity]);
+  });
 
+  const { visible } = props;
+  useEffect(() => {
+    opacity.value = withTiming(visible ? 1 : 0, {
+      duration: 250,
+      easing: Easing.inOut(Easing.linear)
+    })
+  }, [props.visible])
+
+  const { selectedAssets } = props;
   const numberSelected = useSharedValue('');
-  useDerivedValue(() => {
-    //we need to add a dummy condition on the props.lastSelectedAssetAction.value and props.lastSelectedAssetIndex.value so that useDerivedValue does not ignore updating
-    if(props.lastSelectedAssetAction.value>-1 && props.lastSelectedAssetId.value!=='Thisisjustadummytext'){
-      if(props.selectedAssets.value.length){
-        numberSelected.value = ''+props.selectedAssets.value.length;
-      }else{
-        numberSelected.value = '';
-      }
+  useEffect(() => {
+    if (selectedAssets.length) {
+      numberSelected.value = '' + selectedAssets.length;
+    } else {
+      numberSelected.value = '';
     }
+  }, [selectedAssets]);
 
-  }, [props.lastSelectedAssetAction, props.lastSelectedAssetId]);
   return (
     <Reanimated.View style={[styles.actionBar, animatedStyle]}>
-        <Appbar.Header style={[styles.actionBar]}>
-          <Appbar.Action 
-                key='back'
-                color='black'
-                icon='close'
-                onPress={()=>{props.backAction();}} 
-                style={[styles.actionBarIcon]} 
-              />
-          <ReText 
-            style={{color: 'grey'}}
-            text={numberSelected}
-          />
-          <Appbar.Content title="" subtitle="" />
-          {
-            props.actions.map((action) => {
-              return(<Appbar.Action 
-                key={action.name}
-                color={action.color}
-                icon={action.icon}
-                onPress={()=>{action.onPress();}} 
-                style={[styles.actionBarIcon]} 
-              />);
-            })
-          }
-          
-        </Appbar.Header>
+      <Appbar.Header style={[styles.actionBar]}>
+        <Appbar.Action
+          key='back'
+          color='black'
+          icon='close'
+          onPress={() => { props.backAction(); }}
+          style={[styles.actionBarIcon]}
+        />
+        <ReText
+          style={{ color: 'grey' }}
+          text={numberSelected}
+        />
+        <Appbar.Content title="" subtitle="" />
+        {
+          props.actions.map((action) => {
+            return (<Appbar.Action
+              key={action.name}
+              color={action.color}
+              icon={action.icon}
+              onPress={() => { action.onPress(); }}
+              style={[styles.actionBarIcon]}
+            />);
+          })
+        }
+
+      </Appbar.Header>
     </Reanimated.View>
   );
 };
 const styles = StyleSheet.create({
-    actionBar: {
-      zIndex:10,
-      marginTop:0,
-      backgroundColor: 'white',
-    },
-    actionBarIcon: {
-        
-    }
-  });
+  actionBar: {
+    zIndex: 10,
+    marginTop: 0,
+    backgroundColor: 'white',
+  },
+  actionBarIcon: {
+
+  }
+});
 export default ActionBar;

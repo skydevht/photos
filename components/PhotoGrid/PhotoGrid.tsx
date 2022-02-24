@@ -37,7 +37,13 @@ class ExternalScrollView extends BaseScrollView {
     }
 }
 
+export type SelectionState = {
+    [index: string]: boolean | undefined
+}
+
 interface Props {
+    selection: SelectionState,
+    handleSelectionChange: (newSelection: SelectionState) => void,
 }
 
 const PhotoGrid: React.FC<Props> = (props) => {
@@ -58,7 +64,18 @@ const PhotoGrid: React.FC<Props> = (props) => {
         return 'unknown'
     }, [data])
     const layoutProvider = useMemo(() => (new GridLayoutProvider(numColumns, scale, getLayoutType)), [getLayoutType, numColumns])
+    const handleToggleSelect = useCallback((id: string) => {
+        const isSelected = !!props.selection[id];
+        // don't know if the following is super efficient or we need to use an immutable library
+        console.log('grid is selected: ' + id + ' - ' + isSelected)
+        props.handleSelectionChange({
+            ...props.selection,
+            [id]: !isSelected,
+        });
+    }, [props.selection, props.handleSelectionChange])
     const rowRenderer = (type: string | number, data: layout, index: number) => {
+        const isSelected = !!props.selection[data.id];
+        console.log("Renderer is selected: " + isSelected)
         switch (type) {
             case 'story':
                 return <StoryList />;
@@ -69,7 +86,7 @@ const PhotoGrid: React.FC<Props> = (props) => {
                     </View>
                 );
             case 'image':
-                return <PhotoItem photo={data} />
+                return <PhotoItem selected={isSelected} photo={data} onToggleSelect={handleToggleSelect} />
             default: return null;
         }
 
@@ -82,8 +99,9 @@ const PhotoGrid: React.FC<Props> = (props) => {
         );
     }, [numColumns])
     const extendedState = useMemo(() => ({
-        layoutProvider
-    }), [layoutProvider])
+        layoutProvider,
+        selection: props.selection, // to force rerender when the selection state changes
+    }), [layoutProvider, props.selection])
     return dataProvider.getSize() ? (
         <RecyclerListView
             style={{
@@ -91,6 +109,7 @@ const PhotoGrid: React.FC<Props> = (props) => {
             }}
             layoutProvider={layoutProvider}
             dataProvider={dataProvider}
+            renderAheadOffset={1000}
             rowRenderer={rowRenderer}
             renderItemContainer={renderItemContainer}
             extendedState={extendedState}

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { Animated, View, TouchableWithoutFeedback, StyleSheet } from 'react-native';
+import { View, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons'; 
+import Reanimated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 
 const hitSlop = { top: 8, bottom: 8, left: 8, right: 8 };
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
   backgroundColor: string;
   iconColor: string;
   borderColor: string;
-  checked: Animated.AnimatedMultiplication;
+  checked: boolean;
 }
 
 const RoundCheckbox: React.FC<Props> = (props) => {
@@ -18,24 +19,34 @@ const RoundCheckbox: React.FC<Props> = (props) => {
 
     const { size, backgroundColor, borderColor, icon, iconColor } = props;
     const iconSize = size * 1.3;
-    const opacityTiming = useRef(new Animated.Value(0)).current;
+    const opacity = useSharedValue(props.checked ? 1 : 0)
     useEffect(()=>{
-      Animated.timing(opacityTiming, 
-        {
-          toValue: props.checked,
-          duration: 300,
-          useNativeDriver: true
-        }
-      ).start();
-    }, [opacityTiming]);
+      opacity.value = withTiming(props.checked ? 1 : 0, { duration: 300})
+    }, [props.checked]);
+
     const _onPress = () => {
       //props.onValueChange(!props.checked.value);
     };
 
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        opacity: interpolate(opacity.value, [0, 0.9], [0, 1])
+      }
+    })
+
+    const iconAnimatedStyle = useAnimatedStyle(() => {
+      return {
+        opacity: opacity.value,
+        transform: [{
+          scale: opacity.value
+        }]
+      }
+    })
+
     return (
       <TouchableWithoutFeedback hitSlop={hitSlop} onPress={_onPress}>
         <View style={styles.parentWrapper} shouldRasterizeIOS={true}>
-          <Animated.View
+          <Reanimated.View
             style={[
               {
                 borderColor,
@@ -43,16 +54,12 @@ const RoundCheckbox: React.FC<Props> = (props) => {
                 width: size,
                 height: size,
                 borderRadius: size / 2,
-                opacity: opacityTiming.interpolate({
-                  inputRange: [0, 0.9],
-                  outputRange: [1, 0],
-                  }
-                )
               },
               styles.commonWrapperStyles,
+              animatedStyle
             ]}
           />
-          <Animated.View style={
+          <Reanimated.View style={
             [
               {
                 backgroundColor: backgroundColor,
@@ -60,13 +67,8 @@ const RoundCheckbox: React.FC<Props> = (props) => {
                 width: size,
                 height: size,
                 borderRadius: size / 2,
-                opacity: opacityTiming,
-                transform: [
-                  {
-                    scale: opacityTiming
-                  }
-                ]
               },
+              iconAnimatedStyle,
               styles.checkedStyles, styles.commonWrapperStyles, 
             ]}>
             <MaterialIcons
@@ -80,7 +82,7 @@ const RoundCheckbox: React.FC<Props> = (props) => {
                 textAlignVertical:'center'
               }}
             />
-          </Animated.View>
+          </Reanimated.View>
         </View>
       </TouchableWithoutFeedback>
     );
@@ -101,7 +103,5 @@ const styles = StyleSheet.create({
     left: 0,
   }
 });
-const isEqual = (prevProps:Props, nextProps:Props) => {
-  return true;
-}
-export default React.memo(RoundCheckbox, isEqual);
+
+export default RoundCheckbox

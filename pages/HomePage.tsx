@@ -1,7 +1,8 @@
 import React, {useEffect} from 'react';
-import { SafeAreaView, StyleSheet, View, useWindowDimensions, StatusBar } from 'react-native';
-import PhotosContainer from '../components/PhotosContainer';
+import { StyleSheet, View, useWindowDimensions, StatusBar } from 'react-native';
 import {default as Reanimated,} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import PhotosContainer from '../components/PhotosContainer';
 
 interface Props {
   scrollY2: Reanimated.SharedValue<number>;
@@ -22,7 +23,7 @@ const HomePage: React.FC<Props> = (props) => {
   const SCREEN_HEIGHT = useWindowDimensions().height;
 
   return (
-    <SafeAreaView style={styles.SafeAreaView}>
+    <SafeAreaView style={styles.SafeAreaView} edges={['top', 'bottom']}>
       <View style={[styles.View, {width: SCREEN_WIDTH, zIndex:1, marginTop:(StatusBar.currentHeight||0)}]}>
         <PhotosContainer 
           scrollY2={props.scrollY2} 
